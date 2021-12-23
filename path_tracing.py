@@ -1,12 +1,12 @@
 import taichi as ti
 import numpy as np
 import argparse
-from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, PI, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
+from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, PI, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
 ti.init(arch=ti.gpu)
 
 # Canvas
 aspect_ratio = 1.0
-image_width = 800
+image_width = 400
 image_height = int(image_width / aspect_ratio)
 canvas = ti.Vector.field(3, dtype=ti.f32, shape=(image_width, image_height))
 
@@ -119,8 +119,18 @@ if __name__ == "__main__":
 
     # Diffuse ball
     scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
-    # Metal ball
-    scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
+    # # Metal ball
+    # scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
+    # Rectangular Pyramid
+    top_vertex = ti.Vector([-0.8, 0.9, -1.0])
+    sq_vertex1 = ti.Vector([-0.3, -0.5, -0.5])
+    sq_vertex2 = ti.Vector([-0.3, -0.5, -1.5])
+    sq_vertex3 = ti.Vector([-1.3, -0.5, -1.5])
+    sq_vertex4 = ti.Vector([-1.3, -0.5, -0.5])
+    scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.6, 0.8, 0.8])))
+    scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.6, 0.8, 0.8])))
+    scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.6, 0.8, 0.8])))
+    scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.6, 0.8, 0.8])))
     # Glass ball
     scene.add(Sphere(center=ti.Vector([0.7, 0, -0.5]), radius=0.5, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
     # Metal ball-2

@@ -87,6 +87,52 @@ class Sphere:
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
+class Triangle:
+    def __init__(self, vertex1, vertex2, vertex3, material, color):
+        # three vertices counterclockwise
+        self.vertex1 = vertex1
+        self.vertex2 = vertex2
+        self.vertex3 = vertex3
+        self.material = material
+        self.color = color
+        self.normal = (vertex2 - vertex1).cross(vertex3 - vertex2).normalized()
+
+    @ti.func
+    def inside_check(self, point):
+        v1 = self.vertex1 - point
+        v2 = self.vertex2 - point
+        v3 = self.vertex3 - point
+        n1 = v1.cross(v2)
+        n2 = v2.cross(v3)
+        n3 = v3.cross(v1)
+        isInside = False
+        if n1.dot(n2) > 0 and n1.dot(n3) > 0:
+            isInside = True
+        return isInside
+
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal
+        p = self.vertex1
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -self.normal
+        front_face = False
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                if self.inside_check(hit_point):
+                    is_hit = True
+                    if d.dot(n) < 0:
+                        front_face = True
+                        hit_point_normal = self.normal
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
 class Hittable_list:
     def __init__(self):
         self.objects = []
