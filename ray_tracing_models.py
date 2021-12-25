@@ -133,6 +133,35 @@ class Triangle:
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
+class Plane:
+    def __init__(self, point, normal, material, color):
+        self.point = point
+        self.normal = normal
+        self.material = material
+        self.color = color
+    
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal
+        p = self.point
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -self.normal
+        front_face = False
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                is_hit = True
+                if d.dot(n) < 0:
+                    front_face = True
+                    hit_point_normal = self.normal
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
 class Hittable_list:
     def __init__(self):
         self.objects = []
