@@ -1,7 +1,7 @@
 import taichi as ti
 import numpy as np
 import argparse
-from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Plane, \
+from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Torus,\
 PI, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
 
 ti.init(arch=ti.gpu)
@@ -124,24 +124,26 @@ if __name__ == "__main__":
     # scene.add(Sphere(center=ti.Vector([101.5, 0, -1]), radius=100.0, material=1, color=ti.Vector([0.0, 0.6, 0.0])))
     scene.add(Plane(point=ti.Vector([1.5, 0, -1]), normal=ti.Vector([-1.0, 0, 0]), material=1, color=ti.Vector([0.0, 0.6, 0.0])))
 
-    # Diffuse ball
-    scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
-    # Metal ball
-    scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
+    ## Diffuse ball
+    # scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
+    # Torus
+    scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, nU = 10, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
+    # # Metal ball
+    # scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
     # Rectangular Pyramid
     #top_vertex = ti.Vector([-0.8, 0.9, -1.0])
     #sq_vertex1 = ti.Vector([-0.3, -0.5, -0.5])
     #sq_vertex2 = ti.Vector([-0.3, -0.5, -1.5])
     #sq_vertex3 = ti.Vector([-1.3, -0.5, -1.5])
     #sq_vertex4 = ti.Vector([-1.3, -0.5, -0.5])
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([1.0, 1.0, 1.0])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([1.0, 1.0, 1.0])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([1.0, 1.0, 1.0])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([1.0, 1.0, 1.0])))
+    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.0, 0.8, 0.8)))
     # Glass ball
-    scene.add(Sphere(center=ti.Vector([0.7, 0, -0.5]), radius=0.5, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
+    #scene.add(Sphere(center=ti.Vector([0.7, 0, -0.5]), radius=0.5, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
     # Metal ball-2
-    scene.add(Sphere(center=ti.Vector([0.6, -0.3, -2.0]), radius=0.2, material=4, color=ti.Vector([0.8, 0.6, 0.2])))
+    #scene.add(Sphere(center=ti.Vector([0.6, -0.3, -2.0]), radius=0.2, material=4, color=ti.Vector([0.8, 0.6, 0.2])))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
@@ -152,5 +154,5 @@ if __name__ == "__main__":
         cnt += 1
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
-        #if cnt == 500:
-            #ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"cornell_box_balls_planes.png")
+        if cnt == 500:
+            ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus_tesselation_test.png")

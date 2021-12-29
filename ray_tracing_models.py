@@ -133,10 +133,63 @@ class Triangle:
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
+class Polygon:
+    def __init__(self, vertices, material, color):
+        self.n = len(vertices)
+        assert self.n >=3
+        self.vertices = vertices
+        v1 = vertices[0]
+        v2 = vertices[1]
+        v3 = vertices[2]
+        self.normal = (v2 - v1).cross(v3 - v2).normalized()
+        self.material = material
+        self.color = color
+
+    @ti.func
+    def inside_check(self, point):
+        vecs = []
+        norms = []
+        for i in ti.static(range(self.n)):
+            vec = self.vertices[i] - point
+            vecs.append(vec)
+        for i in ti.static(range(self.n-1)):
+            norm = vecs[i].cross(vecs[i+1])
+            norms.append(norm)
+        norms.append(vecs[self.n-1].cross(vecs[0]))
+
+        isInside = True
+        for i in ti.static(range(self.n-1)):
+            if norms[0].dot(norms[i+1])<0:
+                isInside = False
+        return isInside
+
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal
+        p = self.vertices[0]
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -self.normal
+        front_face = False
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                if self.inside_check(hit_point):
+                    is_hit = True
+                    if d.dot(n) < 0:
+                        front_face = True
+                        hit_point_normal = self.normal
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
 class Plane:
     def __init__(self, point, normal, material, color):
         self.point = point
-        self.normal = normal
+        self.normal = normal.normalized()
         self.material = material
         self.color = color
     
@@ -159,6 +212,70 @@ class Plane:
                 if d.dot(n) < 0:
                     front_face = True
                     hit_point_normal = self.normal
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
+class Torus:
+    def __init__(self, center, inside_point, up_normal, inside_radius, nU, nV, material, color):
+        # up_normal is the normal of the plane passing through the center of torus
+        # splitting its interface into concentric circles
+        # inside_point is one point that is on central line inside the torus body
+        self.center = center
+        self.inside_point = inside_point
+        self.up_normal = up_normal
+        self.outside_R = (inside_point - center).norm()
+        self.inside_r = inside_radius
+        self.material = material
+        self.color = color
+        self.nU = nU
+        self.nV = nV
+        self.num_polygons = self.nU * self.nV
+        self.polygons = []
+        self.make_surface_mesh()
+        self.boundingbox_faces = []
+        self.build_boundingbox()
+
+    def build_boundingbox(self):
+        #TODO
+        pass
+
+    def make_surface_mesh(self):
+        x_axis = (self.inside_point - self.center).normalized()
+        y_axis = self.up_normal.normalized()
+        z_axis = x_axis.cross(y_axis)
+        for i in range(self.nU):
+            for j in range(self.nV):
+                theta = i * 2*PI/self.nU
+                theta2 = theta + 2*PI/self.nU
+                phi = j * 2*PI/self.nV
+                phi2 = phi + 2*PI/self.nV
+                xx_axis = ti.cos(theta)*x_axis + ti.sin(theta)*z_axis
+                xx_axis2 = ti.cos(theta2)*x_axis + ti.sin(theta2)*z_axis
+                oc = self.center + self.outside_R * xx_axis
+                oc2 = self.center + self.outside_R * xx_axis2
+                pt1 = oc + self.inside_r * (ti.cos(phi)*xx_axis + ti.sin(phi)*y_axis)
+                pt2 = oc + self.inside_r * (ti.cos(phi2)*xx_axis + ti.sin(phi2)*y_axis)
+                pt3 = oc2 + self.inside_r * (ti.cos(phi2)*xx_axis2 + ti.sin(phi2)*y_axis)
+                pt4 = oc2 + self.inside_r * (ti.cos(phi)*xx_axis2 + ti.sin(phi)*y_axis)
+                vts = [pt1, pt2, pt3, pt4]
+                self.polygons.append(Polygon(vertices = vts, material = self.material, color = self.color))
+
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = ti.Vector([0.0, 0.0, 0.0])
+        front_face = False
+        closest_t = tmax
+        for i in ti.static(range(self.num_polygons)):
+            is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.polygons[i].hit(ray, tmin, closest_t)
+            if is_hit_tmp:
+                closest_t = root_tmp
+                is_hit = is_hit_tmp
+                hit_point = hit_point_tmp
+                hit_point_normal = hit_point_normal_tmp
+                front_face = front_face_tmp
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
