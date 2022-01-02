@@ -127,7 +127,8 @@ if __name__ == "__main__":
     ## Diffuse ball
     # scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
     # Torus
-    scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, nU = 20, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
+    scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
+                    nU = 20, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3]), write_to_obj_file = True))
     # # Metal ball
     # scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
     # Rectangular Pyramid
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     # Metal ball-2
     #scene.add(Sphere(center=ti.Vector([0.6, -0.3, -2.0]), radius=0.2, material=4, color=ti.Vector([0.8, 0.6, 0.2])))
 
-    camera = Camera()
+    '''camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
     canvas.fill(0)
     cnt = 0
@@ -155,4 +156,4 @@ if __name__ == "__main__":
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
         if cnt == 500:
-            ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus20x10_tesselation_test.png")
+            ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus20x10_tesselation_test.png")'''

@@ -237,6 +237,8 @@ class Torus:
         self.z_axis = self.x_axis.cross(self.y_axis)
         self.polygons = []
         self.make_surface_mesh()
+        if self.write_to_obj_file == True:
+            self.write_mesh_to_file()
         self.aabb_faces = []
         self.aabb_boundingbox()
 
@@ -274,12 +276,33 @@ class Torus:
                 xx_axis2 = ti.cos(theta2)*self.x_axis + ti.sin(theta2)*self.z_axis
                 oc = self.center + self.outside_R * xx_axis
                 oc2 = self.center + self.outside_R * xx_axis2
-                pt1 = oc + self.inside_r * (ti.cos(phi)*xx_axis + ti.sin(phi)*self.y_axis)
-                pt2 = oc + self.inside_r * (ti.cos(phi2)*xx_axis + ti.sin(phi2)*self.y_axis)
-                pt3 = oc2 + self.inside_r * (ti.cos(phi2)*xx_axis2 + ti.sin(phi2)*self.y_axis)
-                pt4 = oc2 + self.inside_r * (ti.cos(phi)*xx_axis2 + ti.sin(phi)*self.y_axis)
+                pt1 = oc + self.inside_r * (ti.cos(phi)*xx_axis + ti.sin(phi)*self.y_axis) # i, j
+                pt2 = oc + self.inside_r * (ti.cos(phi2)*xx_axis + ti.sin(phi2)*self.y_axis) # i, j+1
+                pt3 = oc2 + self.inside_r * (ti.cos(phi2)*xx_axis2 + ti.sin(phi2)*self.y_axis) # i+1, j+1
+                pt4 = oc2 + self.inside_r * (ti.cos(phi)*xx_axis2 + ti.sin(phi)*self.y_axis) # i+1, j
                 vts = [pt1, pt2, pt3, pt4]
                 self.polygons.append(Polygon(vertices = vts, material = self.material, color = self.color))
+
+    def write_mesh_to_file(self):
+        with open('torus.obj', 'w') as f:
+            f.write('# torus \n')
+            for i in range(self.nU):
+                for j in range(self.nV):
+                    index = i*self.nV + j
+                    vt = self.polygons[index].vertices[0]
+                    f.write('v ' + str(vt[0]) + ' ' + str(vt[1]) + ' ' + str(vt[2]) + '\n')
+            for i in range(self.nU):
+                for j in range(self.nV):
+                    i2, j2 = i+1, j+1
+                    if i2==self.nU:
+                        i2 = 0
+                    if j2==self.nV:
+                        j2 = 0
+                    id1 = i*self.nV + j
+                    id2 = i*self.nV + j2
+                    id3 = i2*self.nV + j2
+                    id4 = i2*self.nV + j
+                    f.write('f ' + str(id1) + ' ' + str(id2) + ' ' + str(id3) + ' ' + str(id4) + '\n' )
 
     @ti.func
     def hit(self, ray, tmin=0.001, tmax=10e8):
@@ -305,7 +328,7 @@ class Torus:
                     box_tmin = t0
                 if t1 < box_tmax:
                     box_tmax = t1
-        if box_tmin < box_tmax and box_tmax>0:
+        if box_tmin < box_tmax and box_tmax>tmin and box_tmin < closest_t:
             insect_with_box = True
 
         if insect_with_box == True:
