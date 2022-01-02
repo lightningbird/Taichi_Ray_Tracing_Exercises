@@ -2,7 +2,7 @@ import taichi as ti
 import numpy as np
 import argparse
 from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Torus,\
-PI, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
+PI, Inf, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
 
 ti.init(arch=ti.gpu)
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
     ## Diffuse ball
     # scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
     # Torus
-    scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, nU = 10, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
+    scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, nU = 20, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
     # # Metal ball
     # scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
     # Rectangular Pyramid
@@ -155,4 +155,4 @@ if __name__ == "__main__":
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
         if cnt == 500:
-            ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus_tesselation_test.png")
+            ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus20x10_tesselation_test.png")
