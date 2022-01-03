@@ -285,6 +285,7 @@ class Torus:
                 self.polygons.append(Polygon(vertices = vts, material = self.material, color = self.color))
 
     def write_mesh_to_file(self):
+    # vertex index starts from 1
         with open(self.obj_filename, 'w') as f:
             f.write('# torus \n')
             for i in range(self.nU):
@@ -299,10 +300,10 @@ class Torus:
                         i2 = 0
                     if j2==self.nV:
                         j2 = 0
-                    id1 = i*self.nV + j
-                    id2 = i*self.nV + j2
-                    id3 = i2*self.nV + j2
-                    id4 = i2*self.nV + j
+                    id1 = i*self.nV + j + 1
+                    id2 = i*self.nV + j2 + 1
+                    id3 = i2*self.nV + j2 + 1
+                    id4 = i2*self.nV + j + 1
                     f.write('f ' + str(id1) + ' ' + str(id2) + ' ' + str(id3) + ' ' + str(id4) + '\n' )
 
     @ti.func
@@ -357,6 +358,7 @@ class Mesh:
         self.aabb_boundingbox()
     
     def read_obj_file(self):
+    # vertex id in obj file starts from 1
         with open(self.obj_filename, 'r') as f:
             lines = f.readlines()
     
@@ -372,7 +374,7 @@ class Mesh:
                 y = line.split(' ')
                 fvts = []
                 for j in range(len(y)-1):
-                    vid = int(y[j+1])
+                    vid = int(y[j+1]) - 1
                     fvts.append(vts[vid])
                 self.polygons.append(Polygon(vertices = fvts, material = self.material, color = self.color))
 
