@@ -4,7 +4,7 @@ import argparse
 from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Torus, Mesh, \
 PI, Inf, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
 
-ti.init(arch=ti.gpu)
+ti.init(kernel_profiler = True, arch=ti.gpu)
 
 # Canvas
 aspect_ratio = 1.0
@@ -93,6 +93,7 @@ def ray_color(ray):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Naive Ray Tracing')
+    parser.add_argument('--test_number', type=int, default=1, help='test scene number (default: 1)')
     parser.add_argument(
         '--max_depth', type=int, default=10, help='max depth (default: 10)')
     parser.add_argument(
@@ -101,6 +102,8 @@ if __name__ == "__main__":
         '--samples_in_unit_sphere', action='store_true', help='whether sample in a unit sphere')
     args = parser.parse_args()
 
+    test_number = args.test_number
+    assert test_number<=2
     max_depth = args.max_depth
     samples_per_pixel = args.samples_per_pixel
     sample_on_unit_sphere_surface = not args.samples_in_unit_sphere
@@ -109,44 +112,38 @@ if __name__ == "__main__":
     # Light source
     scene.add(Sphere(center=ti.Vector([0, 5.4, -1]), radius=3.0, material=0, color=ti.Vector([10.0, 10.0, 10.0])))
     # Ground
-    #scene.add(Sphere(center=ti.Vector([0, -100.5, -1]), radius=100.0, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
-    scene.add(Plane(point=ti.Vector([0, -0.5, -1]), normal=ti.Vector([0, 1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    scene.add(Plane(point=ti.Vector([0, -0.5, 0]), normal=ti.Vector([0, 1.0, 0]), material=2, color=ti.Vector([0.8, 0.8, 0.8])))
     # ceiling
-    #scene.add(Sphere(center=ti.Vector([0, 102.5, -1]), radius=100.0, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
-    scene.add(Plane(point=ti.Vector([0, 2.5, -1]), normal=ti.Vector([0, -1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    scene.add(Plane(point=ti.Vector([0, 2.5, 0]), normal=ti.Vector([0, -1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     # back wall
-    #scene.add(Sphere(center=ti.Vector([0, 1, 101]), radius=100.0, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     # right wall
-    #scene.add(Sphere(center=ti.Vector([-101.5, 0, -1]), radius=100.0, material=1, color=ti.Vector([0.6, 0.0, 0.0])))
-    scene.add(Plane(point=ti.Vector([-1.5, 0, -1]), normal=ti.Vector([1.0, 0, 0]), material=1, color=ti.Vector([0.6, 0.0, 0.0])))
+    scene.add(Plane(point=ti.Vector([-1.5, 0, 0]), normal=ti.Vector([1.0, 0, 0]), material=1, color=ti.Vector([0.6, 0.0, 0.0])))
     # left wall
-    # scene.add(Sphere(center=ti.Vector([101.5, 0, -1]), radius=100.0, material=1, color=ti.Vector([0.0, 0.6, 0.0])))
-    scene.add(Plane(point=ti.Vector([1.5, 0, -1]), normal=ti.Vector([-1.0, 0, 0]), material=1, color=ti.Vector([0.0, 0.6, 0.0])))
+    scene.add(Plane(point=ti.Vector([1.5, 0, 0]), normal=ti.Vector([-1.0, 0, 0]), material=1, color=ti.Vector([0.0, 0.6, 0.0])))
 
-    ## Diffuse ball
-    # scene.add(Sphere(center=ti.Vector([0, -0.2, -1.5]), radius=0.3, material=1, color=ti.Vector([0.8, 0.3, 0.3])))
-    # Torus
-    #scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
-    #               nU = 5, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3]), write_to_obj_file = True))
-    # Torus from Mesh
-    scene.add(Mesh(obj_filename = 'torus.obj', material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-    # # Metal ball
-    # scene.add(Sphere(center=ti.Vector([-0.8, 0.2, -1]), radius=0.7, material=2, color=ti.Vector([0.6, 0.8, 0.8])))
-    # Rectangular Pyramid
-    #top_vertex = ti.Vector([-0.8, 0.9, -1.0])
-    #sq_vertex1 = ti.Vector([-0.3, -0.5, -0.5])
-    #sq_vertex2 = ti.Vector([-0.3, -0.5, -1.5])
-    #sq_vertex3 = ti.Vector([-1.3, -0.5, -1.5])
-    #sq_vertex4 = ti.Vector([-1.3, -0.5, -0.5])
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-    #scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.0, 0.8, 0.8)))
-    # Glass ball
-    #scene.add(Sphere(center=ti.Vector([0.7, 0, -0.5]), radius=0.5, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
-    # Metal ball-2
-    #scene.add(Sphere(center=ti.Vector([0.6, -0.3, -2.0]), radius=0.2, material=4, color=ti.Vector([0.8, 0.6, 0.2])))
+    if test_number == 1:
+        ## Glass ball
+        scene.add(Sphere(center=ti.Vector([0, -0.1, -1.5]), radius=0.3, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
+        ## Diffuse Torus
+        scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
+                       nU = 10, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3]), write_to_obj_file = True, obj_filename = 'torus1.obj'))
+        ## Diffuse Rectangular Pyramid
+        top_vertex = ti.Vector([-0.8, 0.9, -1.0])
+        sq_vertex1 = ti.Vector([-0.3, -0.5, -0.5])
+        sq_vertex2 = ti.Vector([-0.3, -0.5, -1.5])
+        sq_vertex3 = ti.Vector([-1.3, -0.5, -1.5])
+        sq_vertex4 = ti.Vector([-1.3, -0.5, -0.5])
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+        ## Glass Pentagon Torus
+        scene.add(Torus(center=ti.Vector([0.7, 0.1, -0.5]), inside_point = ti.Vector([0.7, 0.6, -0.5]), up_normal = ti.Vector([0, 0, -1.0]), inside_radius=0.1, 
+                       nU = 5, nV = 8, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
+        ## Glass Triangle Torus
+        scene.add(Torus(center=ti.Vector([0.6, -0.3, -2.0]), inside_point = ti.Vector([0.9, -0.3, -2.0]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
+                       nU = 3, nV = 8, material=3, color=ti.Vector([0.8, 0.6, 0.2])))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
@@ -157,4 +154,5 @@ if __name__ == "__main__":
         cnt += 1
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
-    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"torus_obj_reader_test.png")
+    ti.print_kernel_profile_info('count')
+    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_1.png")

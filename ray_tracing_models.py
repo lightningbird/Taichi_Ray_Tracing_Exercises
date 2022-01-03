@@ -217,7 +217,7 @@ class Plane:
 
 @ti.data_oriented
 class Torus:
-    def __init__(self, center, inside_point, up_normal, inside_radius, nU, nV, material, color, write_to_obj_file=False):
+    def __init__(self, center, inside_point, up_normal, inside_radius, nU, nV, material, color, write_to_obj_file=False, obj_filename=''):
         # up_normal is the normal of the plane passing through the center of torus
         # splitting its interface into concentric circles
         # inside_point is one point that is on central line inside the torus body
@@ -231,6 +231,7 @@ class Torus:
         self.nU = nU
         self.nV = nV
         self.write_to_obj_file = write_to_obj_file
+        self.obj_filename = obj_filename
         self.num_polygons = self.nU * self.nV
         self.x_axis = (self.inside_point - self.center).normalized()
         self.y_axis = self.up_normal.normalized()
@@ -284,7 +285,7 @@ class Torus:
                 self.polygons.append(Polygon(vertices = vts, material = self.material, color = self.color))
 
     def write_mesh_to_file(self):
-        with open('torus.obj', 'w') as f:
+        with open(self.obj_filename, 'w') as f:
             f.write('# torus \n')
             for i in range(self.nU):
                 for j in range(self.nV):
