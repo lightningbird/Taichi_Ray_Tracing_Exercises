@@ -344,6 +344,61 @@ class Torus:
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
+class Mesh:
+    def __init__(self, obj_filename, material, color):
+        self.obj_filename = obj_filename
+        self.material = material
+        self.color = color
+        self.polygons = []
+        self.read_obj_file()
+        self.num_polygons = len(self.polygons)
+        self.aabb_faces = []
+        self.aabb_boundingbox()
+    
+    def read_obj_file(self):
+        with open(self.obj_filename, 'r') as f:
+            lines = f.readlines()
+    
+        vts = []
+        for i in range(len(lines)):
+            line = lines[i]
+            if line[0] == 'v':
+                x = line.split(' ')
+                vts.append(ti.Vector([float(x[1]), float(x[2]), float(x[3]) ]))
+        for i in range(len(lines)):
+            line = lines[i]
+            if line[0] == 'f':
+                y = line.split(' ')
+                fvts = []
+                for j in range(len(y)-1):
+                    vid = int(y[j+1])
+                    fvts.append(vts[vid])
+                self.polygons.append(Polygon(vertices = fvts, material = self.material, color = self.color))
+
+    
+    def aabb_boundingbox(self):
+        pass
+    
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = ti.Vector([0.0, 0.0, 0.0])
+        front_face = False
+        closest_t = tmax
+        # iterate over polygon faces
+        for i in ti.static(range(self.num_polygons)):
+            is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.polygons[i].hit(ray, tmin, closest_t)
+            if is_hit_tmp:
+                closest_t = root_tmp
+                is_hit = is_hit_tmp
+                hit_point = hit_point_tmp
+                hit_point_normal = hit_point_normal_tmp
+                front_face = front_face_tmp
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
 class Hittable_list:
     def __init__(self):
         self.objects = []
