@@ -1,27 +1,42 @@
-# 太极图形课S1-标题部分
-这个作业未来或将是你的开源项目，标题的内容可以来自作业中的核心关键词，让读者一眼看出你所完成的工作/做出的好玩demo
+# 太极图形课S1-大作业
 
-如果暂时未想好，起名时可以参考“太极图形课S1-xxx作业”
+## 作业来源
+这个项目是在太极图形课渲染示例代码上拓展完成的。主要实现了光线与多边形面片求交，圆环体生成，obj文件读写，以及渲染加速结构。
+示例代码库: [*taichi_ray_tracing*](https://github.com/taichiCourse01/taichi_ray_tracing)。
+光追加速结构参考了[Ray Tracing The Next Week](https://raytracing.github.io/)，
+和这个[计算图形学笔记](https://zhuanlan.zhihu.com/p/144403802)。
 
-如下是作业（项目）展开说明的方法，可以帮大家理清思路，并且也对读者非常友好，请小伙伴们多多参考哦
+## 运行方式
 
-## 背景简介
-这里可以简要描述作业（项目）的基本背景情况，它源自哪里？能够有效解决哪些问题？可以尽情列举它的亮点哦
+#### 运行环境：
+`[Taichi] version 0.8.3, llvm 10.0.0, commit 021af5d2, osx, python 3.6.3`
 
-## 成功效果展示
-这里可以展示这份作业（项目）run起来后的可视化效果，可以让其他人更直观感受到你的工作
+#### 运行：
+在运行path_tracing.py时，可运用命令行参数 --test_number (1 or 2) 切换到设置的场景。
+--max_depth, --samples_per_pixel, --samples_in_unit_sphere 均为示例代码path tracer的参数。用于设置光线追踪迭代次数，每个pixel采样光线条数，是否在单位球里进行均匀采样。
 
-![fractal demo](./data/fractal.jpg)
-## 整体结构（Optional）
-脉络清晰的结构能完整展示你的设计思想，以及实现方式，方便读者快读代入，建议可以在repo的目录中包含如下内容：
-这个部分希望大家可以大作业中加入，小作业中可以选择性加入（如果不加也是OK的）
+运行渲染场景1: python3 path_tracing.py --max_depth 5 --test_number 1
+
+## 效果展示
+渲染场景效果图（max_depth 设置为5）
+![scene1](./data/test_scene_1.png)
+
+## 整体结构
+
 ```
 -LICENSE
 -|data
 -README.MD
--xxx.py
+-path_tracing.py
+-ray_tracing_models.py
 ```
 
-## 运行方式
-相信读者们看到这里已经迫不及待想尝试了，这里标记好快速上手的方式即可~  
-例如:  `python3 main.py`
+## 实现细节：
+1. 三角形类(Class Triangle)：用于在场景中加入四棱锥
+2. 平面类(Class Plane)：用于在场景中加入cornell box的面
+3. 圆环体类和多边形类(Class Torus, Class Polygon)：用于在场景中加入圆环体，并可将tesselation生成的圆环体写入obj文件
+4. 网格类(Class Mesh):用于读入obj文件，并渲染多边形网格
+5. 渲染加速：
+    - 圆环体求交时，先与axis aligned bounding box求交。
+    - TODO: 多边形网格物体求交时，使用均匀空间划分网格
+6. TODO: 生成纹理以及纹理贴图
