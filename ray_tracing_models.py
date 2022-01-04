@@ -365,13 +365,13 @@ class Mesh:
         vts = []
         for i in range(len(lines)):
             line = lines[i]
-            if line[0] == 'v':
-                x = line.split(' ')
+            x = line.split(' ')
+            if x[0] == 'v':
                 vts.append(ti.Vector([float(x[1]), float(x[2]), float(x[3]) ]))
         for i in range(len(lines)):
             line = lines[i]
-            if line[0] == 'f':
-                y = line.split(' ')
+            y = line.split(' ')
+            if y[0] == 'f':
                 fvts = []
                 for j in range(len(y)-1):
                     vid = int(y[j+1]) - 1
