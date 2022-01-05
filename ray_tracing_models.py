@@ -193,7 +193,7 @@ class Plane:
         self.normal = normal.normalized()
         self.material = material
         self.color = color
-    
+
     @ti.func
     def hit(self, ray, tmin=0.001, tmax=10e8):
         d = ray.direction
@@ -214,6 +214,80 @@ class Plane:
                     front_face = True
                     hit_point_normal = self.normal
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+@ti.data_oriented
+class Plane_Textured:
+    def __init__(self, point, normal, material, color, texture_vertices):
+        self.point = point
+        self.normal = normal.normalized()
+        self.material = material
+        self.color = color
+
+        self.vertices = texture_vertices
+        self.res_y = 128
+        self.res_x = 128
+        self.texture_image = ti.Vector.field(3, dtype=ti.f32, shape=(self.res_y, self.res_x))
+        self.generate_texture()
+
+    @ti.kernel
+    def generate_texture(self):
+    # reference ==> https://www.shadertoy.com/view/MdlXz8
+        time = 0.1
+        TAU = 2*PI
+        for i, j in self.texture_image:
+            color = ti.Vector([0.0, 0.0, 0.0])
+            uv = ti.Vector([float(i)/self.res_y, float(j)/self.res_x])
+            p = uv*TAU - TAU * ti.floor(uv * TAU / TAU) - 250.0
+            p2 = p
+            c = 1.0
+            inten = 0.005
+            max_iter = 5
+            for k in range(max_iter):
+                t = time * (1.0 - (3.5 / float(k+1)))
+                p2 = p + ti.Vector([ti.cos(t-p2.x) + ti.sin(t+p2.y), ti.sin(t-p2.y)+ti.cos(t+p2.x)])
+                c += 1.0/(ti.Vector([p.x / (ti.sin(p2.x+t)/inten), p.y / (ti.cos(p2.y + t) / inten)])).norm()
+            c /= float(max_iter)
+            c = 1.17 - c**1.4 # reverse
+            c = c ** 8 # making it sharp
+            color = ti.Vector([1.0, 1.0, 1.0]) * c
+            color += ti.min(ti.max(ti.Vector([0.0, 0.35, 0.5]), 0.0), 1.0) # turning blue
+            self.texture_image[i,j] = color
+
+    @ti.func
+    def compute_texture_coord(self, point):
+        x_vec = self.vertices[3] - self.vertices[0]
+        y_vec = self.vertices[1] - self.vertices[0]
+        xp = (point - self.vertices[0]).dot(x_vec.normalized()) / x_vec.norm()
+        yp = (point - self.vertices[0]).dot(y_vec.normalized()) / y_vec.norm()
+        u = int(yp * self.res_y)
+        v = int(xp * self.res_x)
+        return u, v
+
+    @ti.func
+    def hit(self, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal
+        p = self.point
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -self.normal
+        front_face = False
+        color = self.color
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                is_hit = True
+                if d.dot(n) < 0:
+                    front_face = True
+                    hit_point_normal = self.normal
+        if is_hit == True:
+            u, v = self.compute_texture_coord(hit_point)
+            if u>=0 and u<self.res_y and v>=0 and v<self.res_x:
+                color = self.texture_image[u, v]
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, color
 
 @ti.data_oriented
 class Torus:

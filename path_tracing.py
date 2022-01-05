@@ -1,7 +1,7 @@
 import taichi as ti
 import numpy as np
 import argparse
-from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Torus, Mesh, \
+from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Plane_Textured, Torus, Mesh, \
 PI, Inf, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
 
 ti.init(kernel_profiler = True, arch=ti.gpu)
@@ -116,7 +116,8 @@ if __name__ == "__main__":
     # ceiling
     scene.add(Plane(point=ti.Vector([0, 2.5, 0]), normal=ti.Vector([0, -1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     # back wall
-    scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    scene.add(Plane_Textured(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8]),
+                            texture_vertices=[ti.Vector([1.5, -0.5,-1]), ti.Vector([1.5, 2.5,-1]), ti.Vector([-1.5, 2.5, -1]), ti.Vector([-1.5, -0.5,-1])]))
     # right wall
     scene.add(Plane(point=ti.Vector([-1.5, 0, 0]), normal=ti.Vector([1.0, 0, 0]), material=1, color=ti.Vector([0.6, 0.0, 0.0])))
     # left wall
@@ -149,7 +150,7 @@ if __name__ == "__main__":
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
     canvas.fill(0)
     cnt = 0
-    while cnt< 500:
+    while gui.running and cnt< 500:
         render()
         cnt += 1
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
