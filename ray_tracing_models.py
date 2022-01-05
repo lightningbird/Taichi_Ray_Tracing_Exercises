@@ -50,11 +50,52 @@ class Ray:
 
 @ti.data_oriented
 class Sphere:
-    def __init__(self, center, radius, material, color):
+    def __init__(self, center, radius, material, color, use_texture=False):
         self.center = center
         self.radius = radius
         self.material = material
         self.color = color
+        self.use_texture = use_texture
+        self.res_y = 128
+        self.res_x = 128
+        self.texture_image = ti.Vector.field(3, dtype=ti.f32, shape=(self.res_y, self.res_x))
+        if self.use_texture:
+            self.generate_texture()
+
+    @ti.kernel
+    def generate_texture(self):
+    # reference ==> https://www.shadertoy.com/view/MdlXz8
+        time = 0.1
+        TAU = 2*PI
+        for i, j in self.texture_image:
+            color = ti.Vector([0.0, 0.0, 0.0])
+            uv = ti.Vector([float(i)/self.res_y, float(j)/self.res_x])
+            p = uv*TAU - TAU * ti.floor(uv * TAU / TAU) - 250.0
+            p2 = p
+            c = 1.0
+            inten = 0.005
+            max_iter = 5
+            for k in range(max_iter):
+                t = time * (1.0 - (3.5 / float(k+1)))
+                p2 = p + ti.Vector([ti.cos(t-p2.x) + ti.sin(t+p2.y), ti.sin(t-p2.y)+ti.cos(t+p2.x)])
+                c += 1.0/(ti.Vector([p.x / (ti.sin(p2.x+t)/inten), p.y / (ti.cos(p2.y + t) / inten)])).norm()
+            c /= float(max_iter)
+            c = 1.17 - c**1.4 # reverse
+            c = c ** 8 # making it sharp
+            color = ti.Vector([1.0, 1.0, 1.0]) * c
+            color += ti.min(ti.max(ti.Vector([0.0, 0.35, 0.5]), 0.0), 1.0) # turning blue
+            self.texture_image[i,j] = color
+
+    @ti.func
+    def compute_texture_coord(self, point):
+        vec = point - self.center
+        theta = ti.acos(vec.dot(ti.Vector([0.0, -1.0, 0.0]))/vec.norm())
+        phi = ti.atan2(-vec[2], vec[0]) + PI
+        u = int(phi / (2*PI) * self.res_y)
+        v = int(theta / PI * self.res_x)
+        u = int(ti.min(ti.max(u, 0), self.res_y))
+        v = int(ti.min(ti.max(v, 0), self.res_x))
+        return u, v
 
     @ti.func
     def hit(self, ray, t_min=0.001, t_max=10e8):
@@ -68,6 +109,7 @@ class Sphere:
         root = 0.0
         hit_point =  ti.Vector([0.0, 0.0, 0.0])
         hit_point_normal = ti.Vector([0.0, 0.0, 0.0])
+        color = self.color
         if discriminant > 0:
             sqrtd = ti.sqrt(discriminant)
             root = (-b - sqrtd) / (2 * a)
@@ -85,7 +127,12 @@ class Sphere:
                 front_face = True
             else:
                 hit_point_normal = -hit_point_normal
-        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
+        if is_hit == True and self.use_texture==True:
+            u, v = self.compute_texture_coord(hit_point)
+            color = self.texture_image[u, v]
+
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, color
 
 @ti.data_oriented
 class Triangle:
