@@ -112,13 +112,13 @@ if __name__ == "__main__":
     # Light source
     scene.add(Sphere(center=ti.Vector([0, 5.4, -1]), radius=3.0, material=0, color=ti.Vector([10.0, 10.0, 10.0])))
     # Ground
-    scene.add(Plane(point=ti.Vector([0, -0.5, 0]), normal=ti.Vector([0, 1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    scene.add(Plane(point=ti.Vector([0, -0.5, 0]), normal=ti.Vector([0, 1.0, 0]), material=2, color=ti.Vector([0.8, 0.8, 0.8])))
     # ceiling
     scene.add(Plane(point=ti.Vector([0, 2.5, 0]), normal=ti.Vector([0, -1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     # back wall
-    scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
-    #scene.add(Plane_Textured(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8]),
-                            #texture_vertices=[ti.Vector([1.5, -0.5,-1]), ti.Vector([1.5, 2.5,-1]), ti.Vector([-1.5, 2.5, -1]), ti.Vector([-1.5, -0.5,-1])]))
+    #scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    scene.add(Plane_Textured(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8]),
+                            texture_vertices=[ti.Vector([1.5, -0.5,-1]), ti.Vector([1.5, 2.5,-1]), ti.Vector([-1.5, 2.5, -1]), ti.Vector([-1.5, -0.5,-1])]))
     # right wall
     scene.add(Plane(point=ti.Vector([-1.5, 0, 0]), normal=ti.Vector([1.0, 0, 0]), material=1, color=ti.Vector([0.6, 0.0, 0.0])))
     # left wall
@@ -136,19 +136,18 @@ if __name__ == "__main__":
         sq_vertex2 = ti.Vector([-0.3, -0.5, -1.5])
         sq_vertex3 = ti.Vector([-1.3, -0.5, -1.5])
         sq_vertex4 = ti.Vector([-1.3, -0.5, -0.5])
-        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
-        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.0, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex1, vertex3=sq_vertex2, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex2, vertex3=sq_vertex3, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex3, vertex3=sq_vertex4, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+        scene.add(Triangle(vertex1=top_vertex, vertex2=sq_vertex4, vertex3=sq_vertex1, material=1, color=ti.Vector([0.8, 0.8, 0.8])))
         ## Glass Pentagon Torus
         scene.add(Torus(center=ti.Vector([0.7, 0.1, -0.5]), inside_point = ti.Vector([0.7, 0.6, -0.5]), up_normal = ti.Vector([0, 0, -1.0]), inside_radius=0.1, 
                        nU = 5, nV = 8, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
         ## Glass Triangle Torus
         scene.add(Torus(center=ti.Vector([0.6, -0.3, -2.0]), inside_point = ti.Vector([0.9, -0.3, -2.0]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
                        nU = 3, nV = 8, material=3, color=ti.Vector([0.8, 0.6, 0.2])))
-
-    if test_number == 2:
-        scene.add(Sphere(center=ti.Vector([0, 0.2, -0.5]), radius=0.7, material=1, color=ti.Vector([1.0, 1.0, 1.0]), use_texture=True))
+        ## Textured Sphere
+        scene.add(Sphere(center=ti.Vector([-0.8, -0.2, -1.8]), radius=0.3, material=1, color=ti.Vector([1.0, 1.0, 1.0]), use_texture=True))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
@@ -160,4 +159,4 @@ if __name__ == "__main__":
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
     ti.print_kernel_profile_info('count')
-    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_texture_sphere.png")
+    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_1_add_texture.png")

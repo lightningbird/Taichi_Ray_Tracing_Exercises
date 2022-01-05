@@ -1,10 +1,13 @@
-# 太极图形课S1-大作业
+# 太极图形课S1-大作业 路径追踪渲染器
 
 ## 作业来源
-这个项目是在太极图形课渲染示例代码上拓展完成的。主要实现了光线与多边形面片求交，圆环体生成，obj文件读写，以及渲染加速结构。
-示例代码库: [*taichi_ray_tracing*](https://github.com/taichiCourse01/taichi_ray_tracing)。
-光追加速结构参考了[Ray Tracing The Next Week](https://raytracing.github.io/)，
-和这个[计算图形学笔记](https://zhuanlan.zhihu.com/p/144403802)。
+这个项目是在太极图形课渲染示例代码上拓展完成的。主要实现了光线与多边形面片求交，圆环体生成，obj文件读写，渲染加速结构，和纹理贴图。
+
+- 示例代码库: [*taichi_ray_tracing*](https://github.com/taichiCourse01/taichi_ray_tracing)。
+- 光追加速结构参考了[Ray Tracing The Next Week](https://raytracing.github.io/)，
+  和这个[计算图形学笔记](https://zhuanlan.zhihu.com/p/144403802)。
+- 纹理生成参考了代码库[Shadertoys](https://github.com/taichiCourse01/--Shadertoys)。
+- 球面纹理贴图参考了[Ray Tracing The Next Week](https://raytracing.github.io/)。
 
 ## 运行方式
 
@@ -19,7 +22,7 @@
 
 ## 效果展示
 渲染场景效果图（max_depth 设置为5）
-![scene1](./data/test_scene_1.png)
+![scene1](./data/test_scene_1_add_texture.png)
 
 ## 整体结构
 
@@ -39,4 +42,4 @@
 5. 渲染加速：
     - 圆环体求交时，先与axis aligned bounding box求交。
     - TODO: 多边形网格物体求交时，使用均匀空间划分网格
-6. TODO: 生成纹理以及纹理贴图
+6. 贴图平面类(Class Plane_Textured)和更新后的球体类(Class Sphere)中可生成纹理以及纹理贴图
