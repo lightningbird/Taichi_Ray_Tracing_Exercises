@@ -29,9 +29,11 @@
 ```
 -LICENSE
 -|data
+-|obj_files
 -README.MD
 -path_tracing.py
 -ray_tracing_models.py
+-mesh_models.py
 ```
 
 ## 实现细节：
