@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Plane_Textured,\
 PI, Inf, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
-from mesh_models import Torus, Quad_Mesh
+from mesh_models import Torus, Quad_Mesh, Triangle_Mesh
 
 ti.init(kernel_profiler = True, arch=ti.gpu)
 
@@ -152,7 +152,15 @@ if __name__ == "__main__":
 
     if test_number == 2:
     ## Quad Mesh: torus
-        scene.add(Quad_Mesh(obj_filename='./obj_files/torus.obj', material=1, color=ti.Vector([0.8, 0.3, 0.3])))
+        scene.add(Quad_Mesh(obj_filename='./obj_files/torus.obj', material=1, color=ti.Vector([0.0, 0.8, 0.8]),
+                            center=ti.Vector([0, -0.4, -1.5]), scale=1.5, tx=0, ty=0.1, tz=0))
+        scene.add(Quad_Mesh(obj_filename='./obj_files/torus.obj', material=1, color=ti.Vector([0.8, 0.3, 0.3]),
+                            center=ti.Vector([0, -0.4, -1.5]), scale=1.0, tx=0, ty=1.0, tz=0))
+
+    if test_number == 3:
+    ## Triangle Mesh: cow
+        scene.add(Triangle_Mesh(obj_filename='./obj_files/cow.obj', material=1, color=ti.Vector([0.8, 0.6, 0.2]),
+                                center=ti.Vector([0.0, 0.0, 0.0]), scale=2.0, tx=0.0, ty=0.15, tz=-1.5))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
@@ -164,4 +172,4 @@ if __name__ == "__main__":
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
     ti.print_kernel_profile_info('count')
-    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_{test_number}.png")
+    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_{test_number}_output.png")
