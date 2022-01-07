@@ -39,7 +39,7 @@
 ```
 
 ## 实现细节：
-1. 三角形类(Class Triangle, Class Polygon)：用于在场景中加入四棱锥或少量多边形面片
+1. 三角形和多边形类(Class Triangle, Class Polygon)：用于在场景中加入四棱锥或少量多边形面片
 2. 平面类(Class Plane)：用于在场景中加入cornell box的面
 3. 圆环体类和多边形类(Class Torus)：用于在场景中加入圆环体，并可将tesselation生成的圆环体写入obj文件
 4. 网格类(Class Quad_Mesh, Class Triangle_Mesh):用于读入obj文件，并渲染多边形网格
