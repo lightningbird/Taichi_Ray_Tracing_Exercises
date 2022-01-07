@@ -9,7 +9,7 @@ ti.init(kernel_profiler = True, arch=ti.gpu)
 
 # Canvas
 aspect_ratio = 1.0
-image_width = 512
+image_width = 256
 image_height = int(image_width / aspect_ratio)
 canvas = ti.Vector.field(3, dtype=ti.f32, shape=(image_width, image_height))
 
@@ -117,8 +117,10 @@ if __name__ == "__main__":
     # ceiling
     scene.add(Plane(point=ti.Vector([0, 2.5, 0]), normal=ti.Vector([0, -1.0, 0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
     # back wall
-    #scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
-    scene.add(Plane_Textured(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8]),
+    if test_number ==3:
+        scene.add(Plane(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8])))
+    else:
+        scene.add(Plane_Textured(point=ti.Vector([0, 0, 1.0]), normal=ti.Vector([0, 0, -1.0]), material=1, color=ti.Vector([0.8, 0.8, 0.8]),
                             texture_vertices=[ti.Vector([1.5, -0.5,-1]), ti.Vector([1.5, 2.5,-1]), ti.Vector([-1.5, 2.5, -1]), ti.Vector([-1.5, -0.5,-1])]))
     # right wall
     scene.add(Plane(point=ti.Vector([-1.5, 0, 0]), normal=ti.Vector([1.0, 0, 0]), material=1, color=ti.Vector([0.6, 0.0, 0.0])))
@@ -159,8 +161,8 @@ if __name__ == "__main__":
 
     if test_number == 3:
     ## Triangle Mesh: cow
-        scene.add(Triangle_Mesh(obj_filename='./obj_files/cow.obj', material=1, color=ti.Vector([0.8, 0.6, 0.2]),
-                                center=ti.Vector([0.0, 0.0, 0.0]), scale=2.0, tx=0.0, ty=0.15, tz=-1.5))
+        scene.add(Triangle_Mesh(obj_filename='./obj_files/cow.obj', material=4, color=ti.Vector([0.8, 0.6, 0.2]),
+                                center=ti.Vector([0.0, 0.0, 0.0]), scale=2.0, tx=0.0, ty=0.15, tz=-1.0))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
@@ -172,4 +174,4 @@ if __name__ == "__main__":
         gui.set_image(np.sqrt(canvas.to_numpy() / cnt))
         gui.show()
     ti.print_kernel_profile_info('count')
-    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_{test_number}_output.png")
+    ti.imwrite(np.sqrt(canvas.to_numpy() / cnt), f"test_scene_{test_number}.png")
