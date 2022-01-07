@@ -1,5 +1,4 @@
 import taichi as ti
-from ray_tracing_models import Triangle, Polygon
 
 PI = 3.14159265
 Inf = 10e8
@@ -22,10 +21,17 @@ class Torus:
         self.write_to_obj_file = write_to_obj_file
         self.obj_filename = obj_filename
         self.num_polygons = self.nU * self.nV
+        self.vertex1 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex2 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex3 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex4 = ti.Vector.field(3, dtype = ti.f32)
+        self.normal = ti.Vector.field(3, dtype = ti.f32)
+        self.polygons_node = ti.root.dense(ti.ij, (self.nU, self.nV))
+        self.polygons_node.place(self.vertex1, self.vertex2, self.vertex3, self.vertex4, self.normal)
+
         self.x_axis = (self.inside_point - self.center).normalized()
         self.y_axis = self.up_normal.normalized()
         self.z_axis = self.x_axis.cross(self.y_axis)
-        self.polygons = []
         self.make_surface_mesh()
         if self.write_to_obj_file == True:
             self.write_mesh_to_file()
@@ -70,8 +76,11 @@ class Torus:
                 pt2 = oc + self.inside_r * (ti.cos(phi2)*xx_axis + ti.sin(phi2)*self.y_axis) # i, j+1
                 pt3 = oc2 + self.inside_r * (ti.cos(phi2)*xx_axis2 + ti.sin(phi2)*self.y_axis) # i+1, j+1
                 pt4 = oc2 + self.inside_r * (ti.cos(phi)*xx_axis2 + ti.sin(phi)*self.y_axis) # i+1, j
-                vts = [pt1, pt2, pt3, pt4]
-                self.polygons.append(Polygon(vertices = vts, material = self.material, color = self.color))
+                self.vertex1[i, j] = pt1
+                self.vertex2[i, j] = pt2
+                self.vertex3[i, j] = pt3
+                self.vertex4[i, j] = pt4
+                self.normal[i, j] = (pt2 - pt1).cross(pt3 - pt2).normalized()
 
     def write_mesh_to_file(self):
     # vertex index starts from 1
@@ -81,9 +90,8 @@ class Torus:
             f.write('# number of faces is ' + str(self.num_polygons) + '\n')
             for i in range(self.nU):
                 for j in range(self.nV):
-                    index = i*self.nV + j
-                    vt = self.polygons[index].vertices[0]
-                    f.write('v ' + str(vt[0]) + ' ' + str(vt[1]) + ' ' + str(vt[2]) + '\n')
+                    pt1 = self.vertex1[i, j]
+                    f.write('v ' + str(pt1[0]) + ' ' + str(pt1[1]) + ' ' + str(pt1[2]) + '\n')
             for i in range(self.nU):
                 for j in range(self.nV):
                     i2, j2 = i+1, j+1
@@ -96,6 +104,43 @@ class Torus:
                     id3 = i2*self.nV + j2 + 1
                     id4 = i2*self.nV + j + 1
                     f.write('f ' + str(id1) + ' ' + str(id2) + ' ' + str(id3) + ' ' + str(id4) + '\n' )
+
+    @ti.func
+    def inside_check(self, i, j, point):
+        v1 = self.vertex1[i, j] - point
+        v2 = self.vertex2[i, j] - point
+        v3 = self.vertex3[i, j] - point
+        v4 = self.vertex4[i, j] - point
+        n1 = v1.cross(v2)
+        n2 = v2.cross(v3)
+        n3 = v3.cross(v4)
+        n4 = v4.cross(v1)
+        isInside = False
+        if n1.dot(n2) > 0 and n1.dot(n3) > 0 and n1.dot(n4)>0:
+            isInside = True
+        return isInside
+
+    @ti.func
+    def hit_quad(self, i, j, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal[i, j]
+        p = self.vertex1[i, j]
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -n
+        front_face = False
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                if self.inside_check(i, j, hit_point):
+                    is_hit = True
+                    if d.dot(n) < 0:
+                        front_face = True
+                        hit_point_normal = n
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
     @ti.func
     def hit(self, ray, tmin=0.001, tmax=10e8):
@@ -126,53 +171,100 @@ class Torus:
 
         if insect_with_box == True:
             # iterate over polygon faces
-            for i in ti.static(range(self.num_polygons)):
-                is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.polygons[i].hit(ray, tmin, closest_t)
-                if is_hit_tmp:
-                    closest_t = root_tmp
-                    is_hit = is_hit_tmp
-                    hit_point = hit_point_tmp
-                    hit_point_normal = hit_point_normal_tmp
-                    front_face = front_face_tmp
+            for i in range(self.nU):
+                for j in range(self.nV):
+                    is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.hit_quad(i, j, ray, tmin, closest_t)
+                    if is_hit_tmp:
+                        closest_t = root_tmp
+                        is_hit = is_hit_tmp
+                        hit_point = hit_point_tmp
+                        hit_point_normal = hit_point_normal_tmp
+                        front_face = front_face_tmp
         return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
 
 @ti.data_oriented
-class Mesh:
+class Quad_Mesh:
     def __init__(self, obj_filename, material, color):
         self.obj_filename = obj_filename
         self.material = material
         self.color = color
-        self.polygons = []
+        self.max_num_polygons= 4000
+        self.num_polygons = 0
+        self.vertex1 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex2 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex3 = ti.Vector.field(3, dtype = ti.f32)
+        self.vertex4 = ti.Vector.field(3, dtype = ti.f32)
+        self.normal = ti.Vector.field(3, dtype = ti.f32)
+        self.polygons_node = ti.root.dense(ti.i, self.max_num_polygons)
+        self.polygons_node.place(self.vertex1, self.vertex2, self.vertex3, self.vertex4, self.normal)
         self.read_obj_file()
-        self.num_polygons = len(self.polygons)
-        self.aabb_faces = []
-        self.aabb_boundingbox()
-    
+
     def read_obj_file(self):
     # vertex id in obj file starts from 1
         with open(self.obj_filename, 'r') as f:
             lines = f.readlines()
-    
         vts = []
         for i in range(len(lines)):
             line = lines[i]
             x = line.split(' ')
             if x[0] == 'v':
                 vts.append(ti.Vector([float(x[1]), float(x[2]), float(x[3]) ]))
+
+        assert(len(vts) <= self.max_num_polygons)
+        fid = 0
         for i in range(len(lines)):
             line = lines[i]
             y = line.split(' ')
             if y[0] == 'f':
-                fvts = []
-                for j in range(len(y)-1):
-                    vid = int(y[j+1]) - 1
-                    fvts.append(vts[vid])
-                self.polygons.append(Polygon(vertices = fvts, material = self.material, color = self.color))
+                vid1 = int(y[1])
+                vid2 = int(y[2])
+                vid3 = int(y[3])
+                vid4 = int(y[4])
+                self.vertex1[fid] = vts[vid1 - 1]
+                self.vertex2[fid] = vts[vid2 - 1]
+                self.vertex3[fid] = vts[vid3 - 1]
+                self.vertex4[fid] = vts[vid4 - 1]
+                self.normal[fid] = (vts[vid2-1] - vts[vid1-1]).cross(vts[vid3-1] - vts[vid2-1]).normalized()
+                fid += 1
+        self.num_polygons = fid
 
-    
-    def aabb_boundingbox(self):
-        pass
-    
+    @ti.func
+    def inside_check(self, i, point):
+        v1 = self.vertex1[i] - point
+        v2 = self.vertex2[i] - point
+        v3 = self.vertex3[i] - point
+        v4 = self.vertex4[i] - point
+        n1 = v1.cross(v2)
+        n2 = v2.cross(v3)
+        n3 = v3.cross(v4)
+        n4 = v4.cross(v1)
+        isInside = False
+        if n1.dot(n2) > 0 and n1.dot(n3) > 0 and n1.dot(n4)>0:
+            isInside = True
+        return isInside
+
+    @ti.func
+    def hit_quad(self, i, ray, tmin=0.001, tmax=10e8):
+        d = ray.direction
+        o = ray.origin
+        n = self.normal[i]
+        p = self.vertex1[i]
+        is_hit = False
+        root = 0.0
+        hit_point = ti.Vector([0.0, 0.0, 0.0])
+        hit_point_normal = -n
+        front_face = False
+        if ti.abs(d.dot(n)) > 0:
+            root = n.dot(p - o) / d.dot(n)
+            if root >= tmin and root <= tmax:
+                hit_point = ray.at(root)
+                if self.inside_check(i, hit_point):
+                    is_hit = True
+                    if d.dot(n) < 0:
+                        front_face = True
+                        hit_point_normal = n
+        return is_hit, root, hit_point, hit_point_normal, front_face, self.material, self.color
+
     @ti.func
     def hit(self, ray, tmin=0.001, tmax=10e8):
         is_hit = False
@@ -182,8 +274,8 @@ class Mesh:
         front_face = False
         closest_t = tmax
         # iterate over polygon faces
-        for i in ti.static(range(self.num_polygons)):
-            is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.polygons[i].hit(ray, tmin, closest_t)
+        for i in range(self.num_polygons):
+            is_hit_tmp, root_tmp, hit_point_tmp, hit_point_normal_tmp, front_face_tmp, material_tmp, color_tmp = self.hit_quad(i, ray, tmin, closest_t)
             if is_hit_tmp:
                 closest_t = root_tmp
                 is_hit = is_hit_tmp

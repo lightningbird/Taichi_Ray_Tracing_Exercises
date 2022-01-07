@@ -3,13 +3,13 @@ import numpy as np
 import argparse
 from ray_tracing_models import Ray, Camera, Hittable_list, Sphere, Triangle, Polygon, Plane, Plane_Textured,\
 PI, Inf, random_in_unit_sphere, refract, reflect, reflectance, random_unit_vector
-from mesh_models import Torus, Mesh
+from mesh_models import Torus, Quad_Mesh
 
 ti.init(kernel_profiler = True, arch=ti.gpu)
 
 # Canvas
 aspect_ratio = 1.0
-image_width = 400
+image_width = 512
 image_height = int(image_width / aspect_ratio)
 canvas = ti.Vector.field(3, dtype=ti.f32, shape=(image_width, image_height))
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     test_number = args.test_number
-    assert test_number<=2
+    assert test_number<=3
     max_depth = args.max_depth
     samples_per_pixel = args.samples_per_pixel
     sample_on_unit_sphere_surface = not args.samples_in_unit_sphere
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         scene.add(Sphere(center=ti.Vector([0, -0.1, -1.5]), radius=0.3, material=3, color=ti.Vector([1.0, 1.0, 1.0])))
         ## Diffuse Torus
         scene.add(Torus(center=ti.Vector([0, -0.4, -1.5]), inside_point = ti.Vector([0.3, -0.4, -1.5]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1, 
-                       nU = 10, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3]), write_to_obj_file = True, obj_filename = './obj_files/torus1.obj'))
+                       nU = 20, nV = 10, material=1, color=ti.Vector([0.8, 0.3, 0.3]), write_to_obj_file = True, obj_filename = './obj_files/torus.obj'))
         ## Diffuse Rectangular Pyramid
         top_vertex = ti.Vector([-0.8, 0.9, -1.0])
         sq_vertex1 = ti.Vector([-0.3, -0.5, -0.5])
@@ -151,10 +151,8 @@ if __name__ == "__main__":
         scene.add(Sphere(center=ti.Vector([-0.8, -0.2, -1.8]), radius=0.3, material=1, color=ti.Vector([1.0, 1.0, 1.0]), use_texture=True))
 
     if test_number == 2:
-        scene.add(Sphere(center=ti.Vector([-0.8, -0.2, -1.8]), radius=0.3, material=1, color=ti.Vector([1.0, 1.0, 1.0]), use_texture=True))
-        scene.add(Mesh('./obj_files/torus1.obj', material=1, color=ti.Vector([0.8, 0.6, 0.2])))
-        scene.add(Torus(center=ti.Vector([0.6, -0.3, -2.0]), inside_point = ti.Vector([0.9, -0.3, -2.0]), up_normal = ti.Vector([0, 1.0, 0]), inside_radius=0.1,
-                       nU = 3, nV = 8, material=1, color=ti.Vector([0.8, 0.6, 0.2])))
+    ## Quad Mesh: torus
+        scene.add(Quad_Mesh(obj_filename='./obj_files/torus.obj', material=1, color=ti.Vector([0.8, 0.3, 0.3])))
 
     camera = Camera()
     gui = ti.GUI("Ray Tracing", res=(image_width, image_height))
