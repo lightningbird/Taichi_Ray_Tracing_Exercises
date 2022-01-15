@@ -2,6 +2,7 @@ import taichi as ti
 
 PI = 3.14159265
 Inf = 10e8
+Epsilon = 1e-5
 
 @ti.data_oriented
 class Torus:
@@ -157,7 +158,7 @@ class Torus:
         box_tmin = tmin
         box_tmax = tmax
         for i in ti.static(range(3)):
-            if dir[i] > 1e-5 or dir[i] < -1e-5:
+            if dir[i] > Epsilon or dir[i] < -Epsilon:
                 t0 = (self.aabb_faces[2*i] - origin[i]) / dir[i]
                 t1 = (self.aabb_faces[2*i+1] - origin[i]) / dir[i]
                 if t0>t1:
@@ -227,7 +228,7 @@ class Quad_Mesh:
             lines = f.readlines()
         vts = []
         num_faces = 0
-        xmin, xmax, ymin, ymax, zmin, zmax = 1e8, -1e8, 1e8, -1e8, 1e8, -1e8
+        xmin, xmax, ymin, ymax, zmin, zmax = Inf, -Inf, Inf, -Inf, Inf, -Inf
         for i in range(len(lines)):
             line = lines[i]
             x = line.split(' ')
@@ -314,7 +315,7 @@ class Quad_Mesh:
         box_tmin = tmin
         box_tmax = tmax
         for i in ti.static(range(3)):
-            if dir[i] > 1e-5 or dir[i] < -1e-5:
+            if dir[i] > Epsilon or dir[i] < -Epsilon:
                 t0 = (self.aabb_faces[None][2*i] - origin[i]) / dir[i]
                 t1 = (self.aabb_faces[None][2*i+1] - origin[i]) / dir[i]
                 if t0>t1:
@@ -385,7 +386,7 @@ class Triangle_Mesh:
     # vertex id in obj file starts from 1
         with open(self.obj_filename, 'r') as f:
             lines = f.readlines()
-        xmin, xmax, ymin, ymax, zmin, zmax = 1e8, -1e8, 1e8, -1e8, 1e8, -1e8
+        xmin, xmax, ymin, ymax, zmin, zmax = Inf, -Inf, Inf, -Inf, Inf, -Inf
         vts = []
         num_faces = 0
         for i in range(len(lines)):
@@ -423,8 +424,8 @@ class Triangle_Mesh:
     @ti.kernel
     def build_small_aabb(self):
         for bi in range(self.num_small_aabb):
-            bxmin, bymin, bzmin = 1e8, 1e8, 1e8
-            bxmax, bymax, bzmax = -1e8, -1e8, -1e8
+            bxmin, bymin, bzmin = Inf, Inf, Inf
+            bxmax, bymax, bzmax = -Inf, -Inf, -Inf
             fi_start = bi * self.num_polygons_per_box
             fi_end = min(fi_start + self.num_polygons_per_box, self.num_polygons)
             for fi in range(fi_start, fi_end):
@@ -476,7 +477,7 @@ class Triangle_Mesh:
         box_tmin = tmin
         box_tmax = tmax
         for i in ti.static(range(3)):
-            if dir[i] > 1e-5 or dir[i] < -1e-5:
+            if dir[i] > Epsilon or dir[i] < -Epsilon:
                 t0 = (aabb_face[2*i] - origin[i]) / dir[i]
                 t1 = (aabb_face[2*i+1] - origin[i]) / dir[i]
                 if t0>t1:
